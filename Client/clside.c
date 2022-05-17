@@ -7,7 +7,7 @@ char message[100] = ""; //This array will store the messages that are sent by th
 int main(){
     fd = socket(AF_INET, SOCK_STREAM, 0);
     serv.sin_family = AF_INET;
-    serv.sin_port = htons(1337);
+    serv.sin_port = htons(53);
     inet_pton(AF_INET, "127.0.0.1", &serv.sin_addr); //This binds the client to localhost
     connect(fd, (struct sockaddr *)&serv, sizeof(serv)); //This connects the client to the server.
     while(1) {

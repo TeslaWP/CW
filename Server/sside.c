@@ -6,8 +6,8 @@ char message[100] = ""; //Массив, содержащий сообщения.
 
 int main(){
     serv.sin_family = AF_INET;
-    serv.sin_port = htons(1337); //Define the port at which the server will listen for connections.
-    serv.sin_addr.s_addr = INADDR_ANY;
+    serv.sin_port = htons(53); //Define the port at which the server will listen for connections.
+    serv.sin_addr.s_addr = AF_INET;
     fd = socket(AF_INET, SOCK_STREAM, 0); //This will create a new socket and also return the identifier of the socket into fd.
     // To handle errors, you can add an if condition that checks whether fd is greater than 0. If it isn't, prompt an error
     bind(fd, (struct sockaddr *)&serv, sizeof(serv)); //assigns the address specified by serv to the socket
