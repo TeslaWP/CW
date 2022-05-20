@@ -1,25 +1,50 @@
 #include "header.h"
-struct sockaddr_in serv; //This is our main socket variable.
-int fd; //This is the socket file descriptor that will be used to identify the socket
-int conn; //This is the connection file descriptor that will be used to distinguish client connections.
-char message[100] = ""; //This array will store the messages that are sent by the server
 
-int main(){
+char msg[256];
+
+void *receivemsg(void *me){
+    int sock = *((int*)me);
+    int len;
+    while((len = recv(sock, msg, 256, 0)) > 0) {
+        msg[len] = '\0';
+        fputs(msg, stdout);
+    }
+    return NULL;
+}
+
+int main(int argc, char *argv[]){
+    struct sockaddr_in serv;
+    int fd;
+    pthread_t recvt;
+    char send_msg[256];
+    char client_name[16];
+    strcpy(client_name, argv[1]);
     fd = socket(AF_INET, SOCK_STREAM, 0);
     serv.sin_family = AF_INET;
     serv.sin_port = htons(1337);
-    serv.sin_addr.s_addr = inet_addr("192.168.13.37");
-    if(connect(fd, (struct sockaddr *)&serv, sizeof(serv)) != 0){
-        printf("epic fail\n");
+    serv.sin_addr.s_addr = inet_addr("127.0.0.1");
+    if(connect(fd, (struct sockaddr *)&serv, sizeof(serv)) == -1){
+        perror("connect() error: ");
         exit(0);
-    } else { printf("SUCCESS!\n"); } //This connects the client to the server.
+    } else { printf("SUCCESS!\n"); }
+
+    pthread_create(
+        &recvt,
+        NULL,
+        (void *)receivemsg,
+        &fd
+        );
     
-    while(1) {
-        printf("Enter a message: ");
-        if(fgets(message, 100, stdin)==NULL){
-            perror("fgets() error:");
-        };
-        send(fd, message, strlen(message), 0);
-        //An extra breaking condition can be added here (to terminate the while loop)
+    while(fgets(msg, 256, stdin) > 0) {
+        strcpy(send_msg, client_name);
+        strcat(send_msg, ":");
+        strcat(send_msg, msg);
+        
+        if(write(fd, send_msg, strlen(send_msg)) < 0){
+            printf("\nMessage was not sent\n");
+        }
     }
+    pthread_join(recvt, NULL);
+    close(fd);
+    return 0;
 }

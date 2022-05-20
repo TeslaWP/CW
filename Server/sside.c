@@ -1,33 +1,66 @@
 #include "header.h"
-struct sockaddr_in serv; //Главная переменная сокетоа
-int fd; //Файловый дескриптор сокета, используемый для его идентификации
-int conn; //Файловый дескриптор соединения, используемый для отличия подключений клиента
-char message[100] = ""; //Массив, содержащий сообщения.
+pthread_mutex_t mutex;
+int clients[5];
+int n = 0;
 
-int main(){
-    serv.sin_family = AF_INET;
-    serv.sin_port = htons(1337); //Define the port at which the server will listen for connections.
-    printf("%hu\n",ntohs(serv.sin_port));
-    serv.sin_addr.s_addr = INADDR_ANY;
-    fd = socket(AF_INET, SOCK_STREAM, 0); //This will create a new socket and also return the identifier of the socket into fd.
-    // To handle errors, you can add an if condition that checks whether fd is greater than 0. If it isn't, prompt an error
-    if (bind(fd, (struct sockaddr *)&serv, sizeof(serv))) {
-	    perror("bind() error:");
-    }; //assigns the address specified by serv to the socket
-    if (listen(fd,5)==-1){
-        perror("listen() error: ");
-    } else { printf("\nServer started\n"); }//Listen for client connections. Maximum 5 connections will be permitted.
-    //Now we start handling the connections.
-    while((conn = accept(fd, (struct sockaddr *)NULL, NULL))) {
-        int pid;
-        if((pid = fork()) == 0) {
-            while (recv(conn, message, 100, 0)>0) {
-                printf("Message Received: %s\n", message);
-                //An extra breaking condition can be added here (to terminate the child process)            
-                strcpy(message, "");
+void sendtoall(char *msg, int curr){
+    int i;
+    pthread_mutex_lock(&mutex);
+    for (i = 0; i < n; i++) {
+        if (clients[i] != curr) {
+            if (send(clients[i], msg, strlen(msg), 0) < 0){
+                printf("Sending failure\n");
+                continue;
             }
-            exit(0);
         }
     }
-    exit(0);
+    pthread_mutex_unlock(&mutex);
+}
+
+void *receivemsg(void *client_fd){
+    int sock = *((int*)client_fd);
+    char msg[256];
+    int len;
+    while((len = recv(sock, msg, 256, 0)) > 0) {
+        msg[len] = '\0';
+        sendtoall(msg, sock);
+    }
+    return NULL;
+}
+
+int main(){
+    struct sockaddr_in serv;
+    int fd, cfd;
+    pthread_t recvt;
+    serv.sin_family = AF_INET;
+    serv.sin_port = htons(1337);
+    serv.sin_addr.s_addr = INADDR_ANY;
+    
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    
+    if (bind(fd, (struct sockaddr *)&serv, sizeof(serv))) {
+	    perror("bind() error: ");
+        exit(EXIT_FAILURE);
+    };
+    
+    if (listen(fd,5)==-1){
+        perror("listen() error: ");
+    }
+    
+    while((cfd = accept(fd, (struct sockaddr *)NULL, NULL))) {
+        printf("%d", 1);
+        pthread_mutex_lock(&mutex);
+        clients[n] = cfd;
+        n++;
+        
+        pthread_create(
+            &recvt,
+            NULL,
+            (void *)receivemsg, 
+            &cfd
+        );
+
+        pthread_mutex_unlock(&mutex);
+    }
+    return 0;
 }
