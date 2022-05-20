@@ -12,9 +12,11 @@ int main(){
     fd = socket(AF_INET, SOCK_STREAM, 0); //This will create a new socket and also return the identifier of the socket into fd.
     // To handle errors, you can add an if condition that checks whether fd is greater than 0. If it isn't, prompt an error
     if (bind(fd, (struct sockaddr *)&serv, sizeof(serv))) {
-	perror("bind");
+	    perror("bind() error:");
     }; //assigns the address specified by serv to the socket
-    listen(fd,5); //Listen for client connections. Maximum 5 connections will be permitted.
+    if (listen(fd,5)==-1){
+        perror("listen() error: ");
+    } else { printf("\nServer started\n"); }//Listen for client connections. Maximum 5 connections will be permitted.
     //Now we start handling the connections.
     while((conn = accept(fd, (struct sockaddr *)NULL, NULL))) {
         int pid;
