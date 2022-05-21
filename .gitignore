@@ -1,3 +1,5 @@
 .gitconfig
-Client/clside
-Server/sside
+*.o
+app
+server
+main
