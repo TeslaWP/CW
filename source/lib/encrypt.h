@@ -1,3 +1,6 @@
+#ifndef HDR_ENCRYPT_H
+#define HDR_ENCRYPT_H
+
 #include <sys/random.h>
 #include <math.h>
 #include <string.h>
@@ -22,3 +25,5 @@ int GetDataSize(block* inData);
 block* EncryptString(char* inString, block inKey);
 char* DecryptString(block* inData, block inKey);
 block modpow(block A, block B, block C);
+
+#endif

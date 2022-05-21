@@ -4,27 +4,27 @@ all: compilelibraries compilecode compileapps
 
 compileapps: server client main
 
-server:
-	gcc -o server compiled/sside.o -g compiled/lib/encrypt.o
+server: compiled/sside.o compiled/lib/encrypt.o
+	gcc -pthread compiled/sside.o compiled/lib/encrypt.o -o server
 	
-client:
-	gcc -o server compiled/sside.o -g compiled/lib/encrypt.o
+client: compiled/clside.o compiled/lib/encrypt.o
+	gcc -pthread compiled/clside.o compiled/lib/encrypt.o -o client
 	
-main:
-	gcc -o main compiled/main.o
+main: compiled/main.o compiled/lib/encrypt.o
+	gcc -pthread compiled/main.o compiled/lib/encrypt.o -o main
 
 #=================================================
 
-compilecode: compiled/clside.o compiled/sside.o
+compilecode: compiled/clside.o compiled/sside.o compiled/main.o
 
 compiled/clside.o: source/clside.c source/clside.h
-	gcc -pthread source/clside.c -o compiled/clside.o
+	gcc -c -pthread source/clside.c -o compiled/clside.o
 	
 compiled/sside.o: source/sside.c source/sside.h
-	gcc -pthread source/sside.c -o compiled/sside.o
+	gcc -c -pthread source/sside.c -o compiled/sside.o
 	
 compiled/main.o: source/main.c source/main.h
-	gcc -pthread source/main.c -o compiled/main.o
+	gcc -c -pthread source/main.c -o compiled/main.o
 
 #================================================
 

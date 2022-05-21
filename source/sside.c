@@ -1,4 +1,4 @@
-#include "header.h"
+#include "sside.h"
 pthread_mutex_t mutex;
 int clients[5];
 int n = 0;
@@ -28,7 +28,7 @@ void *receivemsg(void *client_fd){
     return NULL;
 }
 
-int main(){
+int main(int argc, char *argv[]){
     struct sockaddr_in serv;
     int fd, cfd;
     pthread_t recvt;
@@ -46,6 +46,10 @@ int main(){
     if (listen(fd,5)==-1){
         perror("listen() error: ");
     }
+
+    char *ip = inet_ntoa(serv.sin_addr);
+    int port = htons(serv.sin_port);
+    printf("Сервер запущен по адресу %s:%d\n",ip,port);
     
     while((cfd = accept(fd, (struct sockaddr *)NULL, NULL))) {
         printf("%d", 1);

@@ -1,4 +1,4 @@
-#include "header.h"
+#include "clside.h"
 
 char msg[256];
 
@@ -17,12 +17,21 @@ int main(int argc, char *argv[]){
     int fd;
     pthread_t recvt;
     char send_msg[256];
-    char client_name[16];
-    strcpy(client_name, argv[1]);
+    char client_name[32];
+    char name[32];
+    char ip[128];
+
+    printf("Адрес сервера:\n>");
+    scanf("%31s",ip);
+
+    printf("Ваш логин:\n>");
+    scanf("%127s",name);
+
+    strcpy(client_name, name);
     fd = socket(AF_INET, SOCK_STREAM, 0);
     serv.sin_family = AF_INET;
     serv.sin_port = htons(1337);
-    serv.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serv.sin_addr.s_addr = inet_addr(ip);
     if(connect(fd, (struct sockaddr *)&serv, sizeof(serv)) == -1){
         perror("connect() error: ");
         exit(0);
