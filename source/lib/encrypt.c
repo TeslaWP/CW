@@ -59,6 +59,7 @@ block* Decrypt(block* inData, block inKey) {
 
 block* EncryptString(char* inString, block inKey) {
     block* Data = Encrypt((void*)inString, strlen(inString)+1, inKey);
+    return Data;
 }
 
 char* DecryptString(block* inData, block inKey) {

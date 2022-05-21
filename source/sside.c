@@ -1,7 +1,41 @@
 #include "sside.h"
+#include "lib/encrypt.h"
 pthread_mutex_t mutex;
 int clients[5];
+block keys[5];
 int n = 0;
+
+
+block *receivekey(void *me){
+    int sock = *((int*)me);
+    char *keymsg;
+    keymsg = malloc(sizeof(block));
+    if(recv(sock, keymsg, sizeof(block), 0)==-1){
+        perror("receivekey recv() error: ");
+        exit(EXIT_FAILURE);
+    }
+    return (block *)keymsg;
+}
+
+void *sendkey(void *fd, block publicKey){
+    int sock = *((int*)fd);
+    char pK[sizeof(block)];
+    memcpy(pK, &publicKey, sizeof(block));
+    int wrt;
+    if((wrt = write(sock, pK, strlen(pK)))==-1){
+        perror("sendkey write() error: ");
+    }
+    return NULL;
+}
+
+block handshake(void *fd){
+    block privateKey = GeneratePrivateKey();
+    block publicKey = CalculatePublicKey(privateKey);
+    block rcvdKey = *receivekey(fd);
+    sendkey(fd, publicKey);
+    block finalKey = CalculateFinalKey(privateKey, rcvdKey);
+    return finalKey;
+}
 
 void sendtoall(char *msg, int curr){
     int i;
@@ -52,9 +86,12 @@ int main(int argc, char *argv[]){
     printf("Сервер запущен по адресу %s:%d\n",ip,port);
     
     while((cfd = accept(fd, (struct sockaddr *)NULL, NULL))) {
-        printf("%d", 1);
+        block fKey = handshake(&cfd);
+        printf("%llx\n", fKey);
+        sendtoall("Кто-то подключился! \n", fd);
         pthread_mutex_lock(&mutex);
         clients[n] = cfd;
+        keys[n] = fKey;
         n++;
         
         pthread_create(
@@ -63,7 +100,7 @@ int main(int argc, char *argv[]){
             (void *)receivemsg, 
             &cfd
         );
-
+        
         pthread_mutex_unlock(&mutex);
     }
     return 0;
