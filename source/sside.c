@@ -1,8 +1,12 @@
 #include "sside.h"
 #include "lib/encrypt.h"
 pthread_mutex_t mutex;
-int clients[5];
-block keys[5];
+typedef struct clients{
+    block key;
+    int cfd;
+} client;
+client* allclients[20];
+int fd;
 int n = 0;
 
 
@@ -17,8 +21,8 @@ block *receivekey(void *me){
     return (block *)keymsg;
 }
 
-void *sendkey(void *fd, block publicKey){
-    int sock = *((int*)fd);
+void *sendkey(void *infd, block publicKey){
+    int sock = *((int*)infd);
     char pK[sizeof(block)];
     memcpy(pK, &publicKey, sizeof(block));
     int wrt;
@@ -28,12 +32,13 @@ void *sendkey(void *fd, block publicKey){
     return NULL;
 }
 
-block handshake(void *fd){
+block handshake(void *infd){
     block privateKey = GeneratePrivateKey();
     block publicKey = CalculatePublicKey(privateKey);
-    block rcvdKey = *receivekey(fd);
-    sendkey(fd, publicKey);
+    block rcvdKey = *receivekey(infd);
+    sendkey(infd, publicKey);
     block finalKey = CalculateFinalKey(privateKey, rcvdKey);
+    printf("my privateKey = %llx\n my publicKey = %llx\n their publicKey = %llx\n", privateKey, publicKey, rcvdKey);
     return finalKey;
 }
 
@@ -41,8 +46,8 @@ void sendtoall(char *msg, int curr){
     int i;
     pthread_mutex_lock(&mutex);
     for (i = 0; i < n; i++) {
-        if (clients[i] != curr) {
-            if (send(clients[i], msg, strlen(msg), 0) < 0){
+        if (allclients[i]->cfd != curr) {
+            if (send(allclients[i]->cfd, msg, strlen(msg), 0) < 0){
                 printf("Sending failure\n");
                 continue;
             }
@@ -51,8 +56,9 @@ void sendtoall(char *msg, int curr){
     pthread_mutex_unlock(&mutex);
 }
 
-void *receivemsg(void *client_fd){
-    int sock = *((int*)client_fd);
+void *receivemsg(void *inc){
+    client the = *((client *)inc);
+    int sock = the.cfd;
     char msg[256];
     int len;
     while((len = recv(sock, msg, 256, 0)) > 0) {
@@ -62,16 +68,24 @@ void *receivemsg(void *client_fd){
     return NULL;
 }
 
+void closeeverything() {
+    for(int i = 0; i < 20; i++){
+        close(allclients[i]->cfd);
+    }
+    close(fd);
+}
+
 int main(int argc, char *argv[]){
     struct sockaddr_in serv;
-    int fd, cfd;
+    int cfd;
     pthread_t recvt;
     serv.sin_family = AF_INET;
-    serv.sin_port = htons(1337);
+    serv.sin_port = htons(6969);
     serv.sin_addr.s_addr = INADDR_ANY;
     
     fd = socket(AF_INET, SOCK_STREAM, 0);
-    
+    int opt = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
     if (bind(fd, (struct sockaddr *)&serv, sizeof(serv))) {
 	    perror("bind() error: ");
         exit(EXIT_FAILURE);
@@ -84,21 +98,25 @@ int main(int argc, char *argv[]){
     char *ip = inet_ntoa(serv.sin_addr);
     int port = htons(serv.sin_port);
     printf("Сервер запущен по адресу %s:%d\n",ip,port);
-    
+    atexit(closeeverything);
     while((cfd = accept(fd, (struct sockaddr *)NULL, NULL))) {
         block fKey = handshake(&cfd);
-        printf("%llx\n", fKey);
+        printf("fKey = %llx\n", fKey);
         sendtoall("Кто-то подключился! \n", fd);
         pthread_mutex_lock(&mutex);
-        clients[n] = cfd;
-        keys[n] = fKey;
+        client *newclient = malloc(sizeof(client));
+        newclient->key = fKey;
+        newclient->cfd = cfd;
+        printf("newclient->fKey = %llx\n", newclient->key);
+        printf("newclient->cfd = %d\n", newclient->cfd);
+        allclients[n] = newclient;
         n++;
         
         pthread_create(
             &recvt,
             NULL,
             (void *)receivemsg, 
-            &cfd
+            newclient
         );
         
         pthread_mutex_unlock(&mutex);

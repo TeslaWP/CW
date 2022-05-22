@@ -11,20 +11,21 @@ block *receivekey(void *me){
     return (block *)keymsg;
 }
 
-void *sendkey(void *fd, block publicKey){
-    int sock = *((int*)fd);
+void *sendkey(void *infd, block publicKey){
+    int sock = *((int*)infd);
     char pK[sizeof(block)];
     memcpy(pK, &publicKey, sizeof(block));
     write(sock, pK, strlen(pK));
     return NULL;
 }
 
-block handshake(void *fd){
+block handshake(void *infd){
     block privateKey = GeneratePrivateKey();
     block publicKey = CalculatePublicKey(privateKey);
-    sendkey(fd, publicKey);
-    block rcvdKey = *receivekey(fd);
+    sendkey(infd, publicKey);
+    block rcvdKey = *receivekey(infd);
     block finalKey = CalculateFinalKey(privateKey, rcvdKey);
+    printf("my privateKey = %llx\n my publicKey = %llx\n their publicKey = %llx\n", privateKey, publicKey, rcvdKey);
     return finalKey;
 }
 
@@ -56,7 +57,7 @@ int main(int argc, char *argv[]){
     strcpy(client_name, name);
     fd = socket(AF_INET, SOCK_STREAM, 0);
     serv.sin_family = AF_INET;
-    serv.sin_port = htons(1337);
+    serv.sin_port = htons(6969);
     serv.sin_addr.s_addr = inet_addr(ip);
     if(connect(fd, (struct sockaddr *)&serv, sizeof(serv)) == -1){
         perror("connect() error: ");
