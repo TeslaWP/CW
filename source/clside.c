@@ -25,8 +25,9 @@ block handshake(void *infd){
     block privateKey = GeneratePrivateKey();
     block publicKey = CalculatePublicKey(privateKey);
     sendkey(infd, publicKey);
-    block rcvdKey = *receivekey(infd);
-    block finalKey = CalculateFinalKey(privateKey, rcvdKey);
+    block *rcvdKey = receivekey(infd);
+    block finalKey = CalculateFinalKey(privateKey, *rcvdKey);
+    free(rcvdKey);
     //printf("my privateKey = %llx\n my publicKey = %llx\n their publicKey = %llx\n", privateKey, publicKey, rcvdKey);
     return finalKey;
 }
@@ -39,6 +40,7 @@ void *receivemsg(void *me){
         deenmsg = DecryptString((block*)msg, fKey);
         msg[256] = '\0';
         fputs(deenmsg, stdout);
+        free(deenmsg);
     }
     return NULL;
 }
@@ -59,12 +61,15 @@ int main(int argc, char *argv[]){
 
     printf("Адрес сервера:\n>");
     scanf("%31s",ip);
+    if (*ip=='\0') memcpy(ip,"0.0.0.0", 8);
 
     printf("Порт:\n>");
     scanf("%d",&port);
+    if (port == 0) port=6969;
         
     printf("Ваш логин:\n>");
     scanf("%127s",name);
+    if (*name=='\0') memcpy(name,"anonymous", 10);
 
     strcpy(client_name, name);
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -97,7 +102,7 @@ int main(int argc, char *argv[]){
         int en_length = GetDataSize(en_send_msg);
 
         if(write(fd, en_send_msg, en_length) < 0){
-            printf("\nMessage was not sent\n");
+            printf("Message was not sent\n");
         }
     }
     return 0;
