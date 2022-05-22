@@ -1,5 +1,4 @@
 #include "clside.h"
-#include "lib/encrypt.h"
 
 char msg[256];
 pthread_t recvt;

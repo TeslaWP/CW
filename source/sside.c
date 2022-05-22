@@ -1,5 +1,4 @@
 #include "sside.h"
-#include "lib/encrypt.h"
 pthread_mutex_t mutex;
 typedef struct clients{
     block key;
