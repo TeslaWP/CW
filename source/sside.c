@@ -38,7 +38,7 @@ block handshake(void *infd){
     block rcvdKey = *receivekey(infd);
     sendkey(infd, publicKey);
     block finalKey = CalculateFinalKey(privateKey, rcvdKey);
-    printf("my privateKey = %llx\n my publicKey = %llx\n their publicKey = %llx\n", privateKey, publicKey, rcvdKey);
+    //printf("my privateKey = %llx\n my publicKey = %llx\n their publicKey = %llx\n", privateKey, publicKey, rcvdKey);
     return finalKey;
 }
 
@@ -47,12 +47,15 @@ void sendtoall(char *msg, int curr){
     pthread_mutex_lock(&mutex);
     for (i = 0; i < n; i++) {
         if (allclients[i]->cfd != curr) {
-            if (send(allclients[i]->cfd, msg, strlen(msg), 0) < 0){
+            block* en_send_msg = EncryptString(msg, allclients[i]->key);
+            int en_length = GetDataSize(en_send_msg);
+            if (send(allclients[i]->cfd, en_send_msg, en_length, 0) < 0){
                 printf("Sending failure\n");
                 continue;
             }
         }
     }
+    printf("%s", msg);
     pthread_mutex_unlock(&mutex);
 }
 
@@ -60,10 +63,12 @@ void *receivemsg(void *inc){
     client the = *((client *)inc);
     int sock = the.cfd;
     char msg[256];
+    char *deenmsg;
     int len;
     while((len = recv(sock, msg, 256, 0)) > 0) {
-        msg[len] = '\0';
-        sendtoall(msg, sock);
+        deenmsg = DecryptString((block*)msg, the.key);
+        deenmsg[256] = '\0';
+        sendtoall(deenmsg, sock);
     }
     return NULL;
 }
@@ -77,10 +82,14 @@ void closeeverything() {
 
 int main(int argc, char *argv[]){
     struct sockaddr_in serv;
-    int cfd;
+    int cfd, inport;
     pthread_t recvt;
+    
+    printf("Введите свой порт:\n>");
+    scanf("%d",&inport);
+
     serv.sin_family = AF_INET;
-    serv.sin_port = htons(6969);
+    serv.sin_port = htons(inport);
     serv.sin_addr.s_addr = INADDR_ANY;
     
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -101,14 +110,14 @@ int main(int argc, char *argv[]){
     atexit(closeeverything);
     while((cfd = accept(fd, (struct sockaddr *)NULL, NULL))) {
         block fKey = handshake(&cfd);
-        printf("fKey = %llx\n", fKey);
+        //printf("fKey = %llx\n", fKey);
         sendtoall("Кто-то подключился! \n", fd);
         pthread_mutex_lock(&mutex);
         client *newclient = malloc(sizeof(client));
         newclient->key = fKey;
         newclient->cfd = cfd;
-        printf("newclient->fKey = %llx\n", newclient->key);
-        printf("newclient->cfd = %d\n", newclient->cfd);
+        //printf("newclient->fKey = %llx\n", newclient->key);
+        //printf("newclient->cfd = %d\n", newclient->cfd);
         allclients[n] = newclient;
         n++;
         
