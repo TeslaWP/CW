@@ -85,7 +85,7 @@ void *receivemsg(void *inc){
     int len;
     while((len = recv(sock, msg, 256, 0)) > 0) {
         deenmsg = DecryptString((block*)msg, the.key);
-        deenmsg[256] = '\0';
+        strcat(deenmsg, "\n");
         sendtoall(deenmsg, sock);
         free(deenmsg);
     }

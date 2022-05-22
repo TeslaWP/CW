@@ -90,18 +90,17 @@ int main(int argc, char *argv[]){
         &fd
         );
     
-    while(fgets(msg, 256, stdin) > 0) {
+    while(1) {
+        scanf("%255s", &(*msg));
         strcpy(send_msg, client_name);
         strcat(send_msg, ":");
         strcat(send_msg, msg);
         if(*msg=='\n'){
             continue;
         }
-
         block* en_send_msg = EncryptString(send_msg, fKey);
         int en_length = GetDataSize(en_send_msg);
-
-        if(write(fd, en_send_msg, en_length) < 0){
+        while(write(fd, en_send_msg, en_length) < 0){
             printf("Message was not sent\n");
         }
     }

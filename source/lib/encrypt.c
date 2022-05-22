@@ -21,7 +21,11 @@ block CalculateFinalKey(block myPrivateKey, block inPublicKey) {
 
 block* FitDataToBlocks(void* inData, int inDataLength) {
     void* newData;
-    newData = calloc(sizeof(block), (inDataLength/(sizeof(block)))+3);
+    if (inDataLength%(sizeof(block))) {
+        newData = calloc(sizeof(block), (inDataLength/(sizeof(block)))+2);
+    } else {
+        newData = calloc(sizeof(block), (inDataLength/(sizeof(block)))+1);
+    }
     memcpy(newData, inData, inDataLength);
     return newData;
 }
@@ -60,7 +64,7 @@ block* EncryptString(char* inString, block inKey) {
 
 char* DecryptString(block* inData, block inKey) {
     inData = Decrypt(inData, inKey);
-    char* newString = malloc(sizeof(char)*strlen((char*)inData));
+    char* newString = calloc(sizeof(char),(strlen((char*)inData)+1));
     strcpy(newString,(char*)inData);
     return newString; 
 }
