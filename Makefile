@@ -4,8 +4,8 @@ all: compilelibraries compilecode compileapps
 
 compileapps: server client main
 
-server: compiled/sside.o compiled/lib/encrypt.o compiled/lib/linkedlist.o 
-	gcc -pthread -Wall compiled/sside.o compiled/lib/encrypt.o compiled/lib/linkedlist.o  -o server
+server: compiled/sside.o compiled/lib/encrypt.o compiled/lib/deque.o 
+	gcc -pthread -Wall compiled/sside.o compiled/lib/encrypt.o compiled/lib/deque.o  -o server
 	
 client: compiled/clside.o compiled/lib/encrypt.o 
 	gcc -pthread -Wall compiled/clside.o compiled/lib/encrypt.o -o client
@@ -28,13 +28,13 @@ compiled/main.o: source/main.c source/main.h
 
 #================================================
 
-compilelibraries: compiled/lib/encrypt.o compiled/lib/linkedlist.o 
+compilelibraries: compiled/lib/encrypt.o compiled/lib/deque.o 
 	
 compiled/lib/encrypt.o:
 	gcc -c -lm -Wall source/lib/encrypt.c -o compiled/lib/encrypt.o
 
-compiled/lib/linkedlist.o:
-	gcc -c -lm -Wall source/lib/linkedlist.c -o compiled/lib/linkedlist.o
+compiled/lib/deque.o:
+	gcc -c -lm -Wall source/lib/deque.c -o compiled/lib/deque.o
 
 #=================================================
 

@@ -1,5 +1,5 @@
-#ifndef HDR_CLSIDE_H
-#define HDR_CLSIDE_H /* Предотвращает случайное двойное включение */
+#ifndef HDR_SSIDE_H
+#define HDR_SSIDE_H /* Предотвращает случайное двойное включение */
 
 #include <stdio.h> /* Стандартные функции ввода-вывода */
 #include <stdlib.h> /* Прототипы наиболее востребованных библиотечных

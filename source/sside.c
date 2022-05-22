@@ -1,19 +1,22 @@
 #include "sside.h"
-#include "lib/linkedlist.h"
+#include "lib/deque.h"
+
 pthread_mutex_t mutex;
 typedef struct clients{
     block key;
     int cfd;
 } client;
-SL_list * allclients;
+
+deque* allclients;
 int fd;
 
-SL_list * SL_search_client(SL_list*L, int key){
-    SL_list* r = L;
-	do {
+deque * DQ_search_client(deque*L, int key){
+    deque* r = L;
+    r = r->next;
+	while(r!=L) {
         r = r->next;
 		if (((client*)(r->data))->cfd == key) return r;
-	} while(r->next);
+	}
 	return null;
 }
 
@@ -51,13 +54,14 @@ block handshake(void *infd){
 }
 
 void sendtoall(char *msg, int curr){
-    SL_list* nc = allclients;
-    if (nc->next == 0) {
+    pthread_mutex_lock(&mutex);
+    deque* nc = allclients;
+    if (nc->next == nc) {
+        pthread_mutex_unlock(&mutex);
         return;
     }
-    pthread_mutex_lock(&mutex);
-    do {
-        nc = nc->next;
+    nc = nc->next;
+    while (nc!=allclients) {
         client* allclientsi = (client*)(nc->data);
         if (allclientsi->cfd != curr) {
             block* en_send_msg = EncryptString(msg, allclientsi->key);
@@ -67,7 +71,8 @@ void sendtoall(char *msg, int curr){
             }
             free(en_send_msg);
         }
-    } while (nc->next);
+        nc = nc->next;
+    }
     printf("%s", msg);
     pthread_mutex_unlock(&mutex);
 }
@@ -85,27 +90,20 @@ void *receivemsg(void *inc){
         free(deenmsg);
     }
     pthread_mutex_lock(&mutex);
-    SL_remove(allclients,SL_search_client(allclients, the.cfd));
+    DQ_delete(allclients, DQ_search_client(allclients, the.cfd), (void*)0);
     pthread_mutex_unlock(&mutex);
     return null;
 }
 
 void cleanclients() {
     pthread_mutex_lock(&mutex);
-    SL_list* nc;
-    SL_list* L = allclients;
-    while (L != null){
-		nc = L->next;
-		free(nc->data);
-		L = nc;
-	}
-    SL_destroy(allclients);
+    DQ_destroy(allclients);
     pthread_mutex_unlock(&mutex);
 }
 
 void closeeverything() {
     printf("Завершаем процесс.\n");
-    SL_list* nc = allclients;
+    deque* nc = allclients;
     do {
         nc=nc->next;
         close(((client*)(nc->data))->cfd);
@@ -141,24 +139,23 @@ int main(int argc, char *argv[]){
     int port = htons(serv.sin_port);
     printf("Сервер запущен по адресу %s:%d\n",ip,port);
     atexit(closeeverything);
-    allclients = SL_create(0);
+    allclients = DQ_create();
     while((cfd = accept(fd, (struct sockaddr *)NULL, NULL))) {
         block fKey = handshake(&cfd);
         //printf("fKey = %llx\n", fKey);
-        sendtoall("Кто-то подключился! \n", cfd);
         pthread_mutex_lock(&mutex);
-        client *newclient = malloc(sizeof(client));
+        client * newclient = malloc(sizeof(client));
         newclient->key = fKey;
         newclient->cfd = cfd;
-        SL_add_first(allclients,SL_create(newclient));
+        DQ_lpush(allclients,newclient,sizeof(client));
         pthread_create(
             &recvt,
-            NULL,
+            null,
             (void *)receivemsg, 
             newclient
         );
         pthread_mutex_unlock(&mutex);
-        
+        sendtoall("Кто-то подключился! \n", cfd);
     }
     return 0;
 }
