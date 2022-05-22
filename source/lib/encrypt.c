@@ -21,11 +21,7 @@ block CalculateFinalKey(block myPrivateKey, block inPublicKey) {
 
 block* FitDataToBlocks(void* inData, int inDataLength) {
     void* newData;
-    if (inDataLength%sizeof(block)) {
-        newData = calloc(sizeof(block), inDataLength/(sizeof(block))+2);
-    } else {
-        newData = calloc(sizeof(block), inDataLength/(sizeof(block))+1);
-    }
+    newData = calloc(sizeof(block), (inDataLength/(sizeof(block)))+3);
     memcpy(newData, inData, inDataLength);
     return newData;
 }
