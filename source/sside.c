@@ -84,12 +84,14 @@ void *receivemsg(void *inc){
         sendtoall(deenmsg, sock);
         free(deenmsg);
     }
+    pthread_mutex_lock(&mutex);
     SL_remove(allclients,SL_search_client(allclients, the.cfd));
-    printf("Guy left, %d clients.\n",SL_count(allclients));
+    pthread_mutex_unlock(&mutex);
     return null;
 }
 
 void cleanclients() {
+    pthread_mutex_lock(&mutex);
     SL_list* nc;
     SL_list* L = allclients;
     while (L != null){
@@ -98,6 +100,7 @@ void cleanclients() {
 		L = nc;
 	}
     SL_destroy(allclients);
+    pthread_mutex_unlock(&mutex);
 }
 
 void closeeverything() {
@@ -154,7 +157,6 @@ int main(int argc, char *argv[]){
             (void *)receivemsg, 
             newclient
         );
-        printf("Guy connected, %d clients.\n",SL_count(allclients));
         pthread_mutex_unlock(&mutex);
         
     }
