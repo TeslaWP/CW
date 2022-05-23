@@ -40,7 +40,7 @@ block* Encrypt(void* inData, int inDataLength, block inKey) {
 }
 
 int GetDataSize(block* inData) {
-    return CountBlocks(inData)*sizeof(block);
+    return (CountBlocks(inData)+1)*sizeof(block);
 }
 
 int CountBlocks(block* inData) {

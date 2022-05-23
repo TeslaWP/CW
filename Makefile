@@ -30,10 +30,10 @@ compiled/main.o: source/main.c source/main.h
 
 compilelibraries: compiled/lib/encrypt.o compiled/lib/deque.o 
 	
-compiled/lib/encrypt.o:
+compiled/lib/encrypt.o: source/lib/encrypt.c source/lib/encrypt.h
 	gcc -c -lm -Wall source/lib/encrypt.c -o compiled/lib/encrypt.o
 
-compiled/lib/deque.o:
+compiled/lib/deque.o:source/lib/deque.c source/lib/deque.h
 	gcc -c -lm -Wall source/lib/deque.c -o compiled/lib/deque.o
 
 #=================================================
