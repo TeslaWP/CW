@@ -8,6 +8,7 @@
 #include <errno.h> /* Объявление errno и определение констант ошибок */
 #include <string.h> /* Наиболее используемые функции обработки строк */
 #include <sys/wait.h>
+#include <signal.h>
 #include <pthread.h>
 /* CW ADDITIONS */
 #include <sys/socket.h> // Для сокетов

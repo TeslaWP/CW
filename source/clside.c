@@ -45,9 +45,14 @@ void *receivemsg(void *me){
     return NULL;
 }
 
+void handle_interrupt(int sig) {
+    exit(0);
+}
+
 void closeeverything() {
     pthread_join(recvt, NULL);
     close(fd);
+    printf("Процесс завершен.\n");
 }
 
 int main(int argc, char *argv[]){
@@ -89,7 +94,9 @@ int main(int argc, char *argv[]){
         (void *)receivemsg,
         &fd
         );
-    
+
+    signal(SIGINT, handle_interrupt); 
+
     while(1) {
         scanf("%255s", &(*msg));
         strcpy(send_msg, client_name);

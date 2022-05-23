@@ -14,8 +14,8 @@ deque * DQ_search_client(deque*L, int key){
     deque* r = L;
     r = r->next;
 	while(r!=L) {
-        r = r->next;
 		if (((client*)(r->data))->cfd == key) return r;
+        r = r->next;
 	}
 	return null;
 }
@@ -101,15 +101,16 @@ void cleanclients() {
     pthread_mutex_unlock(&mutex);
 }
 
+void handle_interrupt(int sig) {
+    exit(0);
+}
+
 void closeeverything() {
-    printf("Завершаем процесс.\n");
     deque* nc = allclients;
-    do {
-        nc=nc->next;
-        close(((client*)(nc->data))->cfd);
-    } while (nc->next != null);
+    nc=nc->next;
     close(fd);
     cleanclients();
+    printf("Процесс завершен.\n");
 }
 
 int main(int argc, char *argv[]){
@@ -135,6 +136,7 @@ int main(int argc, char *argv[]){
         perror("listen() error: ");
     }
 
+    signal(SIGINT, handle_interrupt); 
     char *ip = inet_ntoa(serv.sin_addr);
     int port = htons(serv.sin_port);
     printf("Сервер запущен по адресу %s:%d\n",ip,port);
