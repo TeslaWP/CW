@@ -66,7 +66,7 @@ int main(int argc, char *argv[]){
 
     printf("Адрес сервера:\n>");
     scanf("%31s",ip);
-    if (*ip=='\0') memcpy(ip,"0.0.0.0", 8);
+    if (*ip=='0') memcpy(ip,"0.0.0.0", 8);
 
     printf("Порт:\n>");
     scanf("%d",&port);
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
         
     printf("Ваш логин:\n>");
     scanf("%127s",name);
-    if (*name=='\0') memcpy(name,"anonymous", 10);
+    if (*name=='0') memcpy(name,"anonymous", 10);
 
     strcpy(client_name, name);
     fd = socket(AF_INET, SOCK_STREAM, 0);
