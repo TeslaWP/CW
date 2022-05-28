@@ -97,8 +97,7 @@ int main(int argc, char *argv[]){
 
     signal(SIGINT, handle_interrupt); 
 
-    while(1) {
-        scanf("%255s", &(*msg));
+    while(fgets(msg, 256, stdin) > 0) {
         strcpy(send_msg, client_name);
         strcat(send_msg, ":");
         strcat(send_msg, msg);
